@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>건스패밀리</title>
+    <title>건스패밀리 (Guns Family)</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -12,28 +13,23 @@
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
-            touch-action: none;
         }
         html, body {
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #0f0c20;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: sans-serif;
+            background-color: #0d0e15;
+            touch-action: none;
+            font-family: 'Pretendard', -apple-system, sans-serif;
         }
         #game-container {
             width: 100%;
             height: 100%;
-        }
-        canvas {
-            display: block;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
     </style>
-    <!-- Phaser 3 CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
 </head>
 <body>
 
@@ -41,643 +37,688 @@
 
 <script>
 /**
- * 건스패밀리 (Guns Family) - 갤럭시 S25 울트라(120Hz) 및 모바일 터치 완벽 대응 버전
+ * Web Audio API Synth Sound Generator
  */
+class SoundFx {
+    constructor() {
+        this.ctx = null;
+        this.bgmTimer = null;
+        this.isBgmPlaying = false;
+    }
 
+    init() {
+        if (!this.ctx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+    }
+
+    playJump() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(400, this.ctx.currentTime + 0.15);
+
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.15);
+    }
+
+    playCoin() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(987.77, this.ctx.currentTime); // B5
+        osc.frequency.setValueAtTime(1318.51, this.ctx.currentTime + 0.08); // E6
+
+        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.25);
+    }
+
+    playHit() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(120, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.2);
+
+        gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.2);
+    }
+
+    playSkill() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.4);
+
+        gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.4);
+    }
+
+    startBGM() {
+        if (this.isBgmPlaying) return;
+        this.init();
+        this.isBgmPlaying = true;
+        let noteIdx = 0;
+        const notes = [220, 247, 261, 293, 329, 293, 261, 247]; // Synth Bass loop
+
+        this.bgmTimer = setInterval(() => {
+            if (!this.isBgmPlaying || !this.ctx) return;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(notes[noteIdx % notes.length], this.ctx.currentTime);
+
+            gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.18);
+
+            osc.start();
+            osc.stop(this.ctx.currentTime + 0.2);
+            noteIdx++;
+        }, 200);
+    }
+
+    stopBGM() {
+        this.isBgmPlaying = false;
+        if (this.bgmTimer) clearInterval(this.bgmTimer);
+    }
+}
+
+const soundFx = new SoundFx();
+
+/**
+ * Main Game Scene
+ */
+class MainGameScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'MainGameScene' });
+    }
+
+    init(data) {
+        this.selectedChar = data.character || 'gunyoung'; // 'gunyoung' 또는 'gunwoo'
+    }
+
+    preload() {
+        // Procedural Textures 생성
+        this.createProceduralTextures();
+    }
+
+    createProceduralTextures() {
+        // 건영 (블랙팬서 컨셉: 보라/블랙)
+        const gyGfx = this.make.graphics({x: 0, y: 0, add: false});
+        gyGfx.fillStyle(0x111118);
+        gyGfx.fillRoundedRect(0, 0, 50, 70, 8);
+        gyGfx.lineStyle(3, 0xa855f7);
+        gyGfx.strokeRoundedRect(2, 2, 46, 66, 6);
+        gyGfx.fillStyle(0xa855f7);
+        gyGfx.fillRect(30, 15, 15, 8); // 눈/바이저
+        gyGfx.generateTexture('char_gunyoung', 50, 70);
+
+        // 건우 (헐크 컨셉: 녹색/대형)
+        const gwGfx = this.make.graphics({x: 0, y: 0, add: false});
+        gwGfx.fillStyle(0x15803d);
+        gwGfx.fillRoundedRect(0, 0, 60, 80, 8);
+        gwGfx.lineStyle(4, 0x4ade80);
+        gwGfx.strokeRoundedRect(2, 2, 56, 76, 6);
+        gwGfx.fillStyle(0xef4444);
+        gwGfx.fillRect(35, 18, 18, 8); // 눈
+        gwGfx.generateTexture('char_gunwoo', 60, 80);
+
+        // 바닥 Obstacle (높은 장애물)
+        const obsHigh = this.make.graphics({x: 0, y: 0, add: false});
+        obsHigh.fillStyle(0xef4444);
+        obsHigh.fillRect(0, 0, 45, 65);
+        obsHigh.lineStyle(3, 0xffffff);
+        obsHigh.strokeRect(0, 0, 45, 65);
+        obsHigh.generateTexture('obs_high', 45, 65);
+
+        // 공중 Obstacle (숙이기용)
+        const obsAir = this.make.graphics({x: 0, y: 0, add: false});
+        obsAir.fillStyle(0xf97316);
+        obsAir.fillRect(0, 0, 70, 40);
+        obsAir.lineStyle(3, 0xffffff);
+        obsAir.strokeRect(0, 0, 70, 40);
+        obsAir.generateTexture('obs_air', 70, 40);
+
+        // 코인
+        const coinGfx = this.make.graphics({x: 0, y: 0, add: false});
+        coinGfx.fillStyle(0xeab308);
+        coinGfx.fillCircle(12, 12, 12);
+        coinGfx.lineStyle(2, 0xffffff);
+        coinGfx.strokeCircle(12, 12, 10);
+        coinGfx.generateTexture('item_coin', 24, 24);
+
+        // 하트 (HP 회복)
+        const heartGfx = this.make.graphics({x: 0, y: 0, add: false});
+        heartGfx.fillStyle(0xec4899);
+        heartGfx.fillCircle(8, 8, 8);
+        heartGfx.fillCircle(18, 8, 8);
+        heartGfx.fillTriangle(0, 10, 26, 10, 13, 24);
+        heartGfx.generateTexture('item_heart', 26, 26);
+    }
+
+    create() {
+        soundFx.startBGM();
+
+        // 120Hz 지원을 위한 터치 포인트 설정 (3개 이상 멀티터치 지원)
+        this.input.addPointer(2);
+
+        // 스펙 세팅
+        if (this.selectedChar === 'gunyoung') {
+            this.maxHp = 100;
+            this.charTexture = 'char_gunyoung';
+            this.gaugeMultiplier = 1.5; // 스킬 게이지 1.5배
+            this.skillType = 'MAGNET_SHIELD';
+        } else {
+            this.maxHp = 150;
+            this.charTexture = 'char_gunwoo';
+            this.gaugeMultiplier = 1.0;
+            this.skillType = 'DESTROY_RUSH';
+        }
+
+        this.hp = this.maxHp;
+        this.score = 0;
+        this.skillGauge = 0; // 0 ~ 100
+        this.isSkillActive = false;
+        this.skillTimer = 0;
+        this.isSliding = false;
+        this.phase = 1;
+        this.baseSpeed = 380; // 초당 이동 픽셀 (Frame Independent)
+        this.currentSpeed = this.baseSpeed;
+        this.phaseTime = 0;
+
+        // SafeArea 및 화면 배치
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        this.groundY = height - 120; // Y축 여백 하향 배치로 주소창/하단바 interference 방지
+
+        // 배경
+        this.bg = this.add.tileSprite(width / 2, height / 2, width, height, null).setTileScale(1, 1);
+        const bgGfx = this.add.graphics();
+        bgGfx.fillStyle(0x1e1e2e);
+        bgGfx.fillRect(0, 0, width, height);
+        bgGfx.lineStyle(1, 0x313244, 0.5);
+        for(let i=0; i<width; i+=40) bgGfx.lineBetween(i, 0, i, height);
+
+        // 바닥 그래픽
+        this.ground = this.add.rectangle(width / 2, this.groundY + 30, width, 60, 0x334155);
+        this.physics.add.existing(this.ground, true);
+
+        // 플레이어 설정
+        this.player = this.physics.add.sprite(120, this.groundY - 50, this.charTexture);
+        this.player.setCollideWorldBounds(true);
+        this.player.setGravityY(1600);
+        this.physics.add.collider(this.player, this.ground);
+
+        // 플레이어 히트박스 보정
+        this.originalBodyWidth = this.player.width;
+        this.originalBodyHeight = this.player.height;
+
+        // 스킬 보호막 이펙트 (Graphics)
+        this.shieldGfx = this.add.graphics();
+        this.shieldGfx.setVisible(false);
+
+        // 그룹 생성
+        this.obstacles = this.physics.add.group();
+        this.coins = this.physics.add.group();
+        this.hearts = this.physics.add.group();
+
+        // 충돌 설정
+        this.physics.add.overlap(this.player, this.obstacles, this.handleObstacleCollision, null, this);
+        this.physics.add.overlap(this.player, this.coins, this.collectCoin, null, this);
+        this.physics.add.overlap(this.player, this.hearts, this.collectHeart, null, this);
+
+        // 장애물/아이템 스폰 타이머
+        this.spawnTimer = 0;
+        this.spawnInterval = 2.0; // 초 단위
+
+        // UI 레이아웃 (SafeArea 고려)
+        this.createUI();
+
+        // 모바일 터치 컨트롤 생성
+        this.createControls();
+
+        // Fullscreen 이벤트
+        this.input.on('pointerdown', () => {
+            if (!this.scale.isFullscreen) {
+                this.scale.startFullscreen();
+            }
+        });
+    }
+
+    createUI() {
+        const width = this.cameras.main.width;
+        
+        // HP 바
+        this.add.rectangle(140, 40, 204, 24, 0x000000, 0.5);
+        this.hpBar = this.add.rectangle(40, 40, 200, 20, 0x22c55e).setOrigin(0, 0.5);
+
+        // 스킬 게이지 바
+        this.add.rectangle(140, 70, 204, 18, 0x000000, 0.5);
+        this.skillBar = this.add.rectangle(40, 70, 0, 14, 0x3b82f6).setOrigin(0, 0.5);
+
+        // 텍스트 UI
+        this.scoreText = this.add.text(width - 40, 35, 'SCORE: 0', { fontSize: '22px', color: '#fff', fontStyle: 'bold' }).setOrigin(1, 0.5);
+        this.phaseText = this.add.text(width / 2, 35, 'PHASE 1', { fontSize: '24px', color: '#eab308', fontStyle: 'bold' }).setOrigin(0.5);
+
+        // Phase Up 알림 텍스트
+        this.phaseUpText = this.add.text(width / 2, 180, 'PHASE UP!', { fontSize: '48px', color: '#facc15', fontStyle: 'bold' })
+            .setOrigin(0.5).setAlpha(0);
+    }
+
+    createControls() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        const btnY = height - 60; // 터치 피로도를 고려한 하단 배치
+
+        // 점프 버튼 (좌측)
+        const jumpBtn = this.add.circle(100, btnY, 48, 0x3b82f6, 0.6).setInteractive();
+        this.add.text(100, btnY, 'JUMP', { fontSize: '18px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+
+        jumpBtn.on('pointerdown', () => {
+            this.handleJump();
+        });
+
+        // 숙이기(Slide) 버튼 (중앙 우측)
+        const slideBtn = this.add.circle(width - 220, btnY, 48, 0x8b5cf6, 0.6).setInteractive();
+        this.add.text(width - 220, btnY, 'SLIDE', { fontSize: '18px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+
+        // 터치 완벽 대응: pointerdown, pointerup, pointerout, pointercancel 모두 등록
+        const startSlide = () => { this.setSliding(true); };
+        const stopSlide = () => { this.setSliding(false); };
+
+        slideBtn.on('pointerdown', startSlide);
+        slideBtn.on('pointerup', stopSlide);
+        slideBtn.on('pointerout', stopSlide);
+        slideBtn.on('pointercancel', stopSlide);
+
+        // 스킬 버튼 (우측)
+        this.skillBtn = this.add.circle(width - 90, btnY, 48, 0x64748b, 0.6).setInteractive();
+        this.skillBtnText = this.add.text(width - 90, btnY, 'SKILL', { fontSize: '18px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+
+        this.skillBtn.on('pointerdown', () => {
+            this.activateSkill();
+        });
+    }
+
+    handleJump() {
+        if (this.player.body.touching.down && !this.isSliding) {
+            this.player.setVelocityY(-650);
+            soundFx.playJump();
+        }
+    }
+
+    setSliding(sliding) {
+        if (this.isSliding === sliding) return;
+        this.isSliding = sliding;
+
+        if (sliding) {
+            this.player.setScale(1, 0.5);
+            if (this.player.body.touching.down) {
+                this.player.y += 15;
+            }
+        } else {
+            this.player.setScale(1, 1);
+        }
+    }
+
+    activateSkill() {
+        if (this.skillGauge >= 100 && !this.isSkillActive) {
+            this.isSkillActive = true;
+            this.skillGauge = 0;
+            this.skillTimer = 6.0; // 6초간 유지
+            soundFx.playSkill();
+
+            // 건우 스킬: 화면 내 모든 장애물 즉시 파괴
+            if (this.skillType === 'DESTROY_RUSH') {
+                this.obstacles.getChildren().forEach(obs => {
+                    this.createExplosion(obs.x, obs.y);
+                });
+                this.obstacles.clear(true, true);
+                this.cameras.main.shake(200, 0.01);
+            }
+        }
+    }
+
+    update(time, delta) {
+        // Delta 시간(초) 계산: 120Hz/60Hz 가변 주사율 보정
+        const dt = delta / 1000;
+
+        // Phase 난이도 상승 (30초마다)
+        this.phaseTime += dt;
+        if (this.phaseTime >= 30) {
+            this.phaseTime = 0;
+            this.phase++;
+            this.currentSpeed += 60; // 속도 증가
+            this.spawnInterval = Math.max(0.8, this.spawnInterval - 0.25); // 스폰 간격 단축
+            this.phaseText.setText(`PHASE ${this.phase}`);
+
+            // Phase Up 연출 (플래시, 진동, 텍스트)
+            this.cameras.main.flash(300, 255, 255, 255);
+            if (navigator.vibrate) navigator.vibrate(200);
+
+            this.tweens.add({
+                targets: this.phaseUpText,
+                alpha: 1,
+                scale: { from: 0.5, to: 1.2 },
+                duration: 400,
+                yoyo: true,
+                hold: 600,
+                onComplete: () => this.phaseUpText.setAlpha(0)
+            });
+        }
+
+        // 스킬 타이머 처리
+        if (this.isSkillActive) {
+            this.skillTimer -= dt;
+            if (this.skillTimer <= 0) {
+                this.isSkillActive = false;
+                this.shieldGfx.setVisible(false);
+            } else {
+                this.updateShieldEffect();
+            }
+        }
+
+        // 건영 스킬: 코인 자석 연출
+        if (this.isSkillActive && this.skillType === 'MAGNET_SHIELD') {
+            this.coins.getChildren().forEach(coin => {
+                const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, coin.x, coin.y);
+                if (dist < 350) {
+                    this.physics.moveToObject(coin, this.player, 700);
+                }
+            });
+        }
+
+        // 장애물/아이템 스폰 관리
+        this.spawnTimer += dt;
+        if (this.spawnTimer >= this.spawnInterval) {
+            this.spawnTimer = 0;
+            this.spawnPattern();
+        }
+
+        // 객체 이동 (Frame Independent: dt 곱연산 적용)
+        const moveDistance = this.currentSpeed * dt;
+
+        this.obstacles.getChildren().forEach(obs => {
+            obs.x -= moveDistance;
+            if (obs.x < -100) obs.destroy();
+        });
+
+        this.coins.getChildren().forEach(coin => {
+            if (!this.isSkillActive || this.skillType !== 'MAGNET_SHIELD') {
+                coin.x -= moveDistance;
+            }
+            if (coin.x < -50) coin.destroy();
+        });
+
+        this.hearts.getChildren().forEach(heart => {
+            heart.x -= moveDistance;
+            if (heart.x < -50) heart.destroy();
+        });
+
+        // UI 점수 업데이트
+        this.score += Math.floor(dt * 100);
+        this.scoreText.setText(`SCORE: ${this.score}`);
+
+        // UI 게이지 업데이트
+        this.hpBar.width = Phaser.Math.Clamp((this.hp / this.maxHp) * 200, 0, 200);
+        this.skillBar.width = Phaser.Math.Clamp((this.skillGauge / 100) * 200, 0, 200);
+
+        if (this.skillGauge >= 100 && !this.isSkillActive) {
+            this.skillBtn.setFillStyle(0x3b82f6, 1.0);
+        } else {
+            this.skillBtn.setFillStyle(0x64748b, 0.6);
+        }
+    }
+
+    updateShieldEffect() {
+        this.shieldGfx.clear();
+        this.shieldGfx.setVisible(true);
+
+        // 스킬 종료 1.5초 전 점박/경고 연출
+        if (this.skillTimer <= 1.5 && Math.floor(this.time.now / 100) % 2 === 0) {
+            return;
+        }
+
+        const color = (this.skillType === 'MAGNET_SHIELD') ? 0xa855f7 : 0x22c55e;
+        this.shieldGfx.lineStyle(4, color, 0.8);
+        this.shieldGfx.strokeCircle(this.player.x, this.player.y, 45);
+
+        // 회전하는 이펙트 알갱이
+        const angle = (this.time.now / 4) % 360;
+        const rad = Phaser.Math.DegToRad(angle);
+        const px = this.player.x + Math.cos(rad) * 45;
+        const py = this.player.y + Math.sin(rad) * 45;
+
+        this.shieldGfx.fillStyle(0xffffff, 1);
+        this.shieldGfx.fillCircle(px, py, 6);
+    }
+
+    spawnPattern() {
+        const width = this.cameras.main.width;
+        const rand = Phaser.Math.Between(1, 3);
+
+        if (rand === 1) {
+            // 패턴 1: 점프형 높은 장애물
+            const obs = this.obstacles.create(width + 50, this.groundY - 32, 'obs_high');
+            obs.body.allowGravity = false;
+            obs.setImmovable(true);
+
+            // 상단 코인 배치
+            for(let i=0; i<3; i++) {
+                const coin = this.coins.create(width + 50 + (i * 35), this.groundY - 120, 'item_coin');
+                coin.body.allowGravity = false;
+            }
+        } else if (rand === 2) {
+            // 패턴 2: 숙이기용 공중 장애물 + 아래 코인
+            const obs = this.obstacles.create(width + 50, this.groundY - 85, 'obs_air');
+            obs.body.allowGravity = false;
+            obs.setImmovable(true);
+
+            for(let i=0; i<3; i++) {
+                const coin = this.coins.create(width + 30 + (i * 35), this.groundY - 20, 'item_coin');
+                coin.body.allowGravity = false;
+            }
+        } else {
+            // 패턴 3: 연속 코인 + 확률적 하트
+            for(let i=0; i<4; i++) {
+                const coin = this.coins.create(width + 50 + (i * 40), this.groundY - 30, 'item_coin');
+                coin.body.allowGravity = false;
+            }
+            if (Phaser.Math.Between(1, 10) > 6) {
+                const heart = this.hearts.create(width + 230, this.groundY - 80, 'item_heart');
+                heart.body.allowGravity = false;
+            }
+        }
+    }
+
+    handleObstacleCollision(player, obstacle) {
+        // 무적 돌진 스킬 상태일 때 장애물 파괴
+        if (this.isSkillActive && this.skillType === 'DESTROY_RUSH') {
+            this.createExplosion(obstacle.x, obstacle.y);
+            obstacle.destroy();
+            soundFx.playHit();
+            return;
+        }
+
+        // 회피 보호막 스킬 상태일 때 데미지 무시 및 방어 이펙트
+        if (this.isSkillActive && this.skillType === 'MAGNET_SHIELD') {
+            obstacle.destroy();
+            soundFx.playHit();
+            return;
+        }
+
+        // 일반 상태 피격
+        obstacle.destroy();
+        soundFx.playHit();
+        this.hp -= 25;
+        this.cameras.main.shake(150, 0.015);
+        this.player.setTint(0xff0000);
+        this.time.delayedCall(150, () => this.player.clearTint());
+
+        if (this.hp <= 0) {
+            this.gameOver();
+        }
+    }
+
+    collectCoin(player, coin) {
+        coin.destroy();
+        soundFx.playCoin();
+        this.score += 50;
+
+        if (!this.isSkillActive) {
+            this.skillGauge = Math.min(100, this.skillGauge + (8 * this.gaugeMultiplier));
+        }
+    }
+
+    collectHeart(player, heart) {
+        heart.destroy();
+        soundFx.playCoin();
+        this.hp = Math.min(this.maxHp, this.hp + 30);
+    }
+
+    createExplosion(x, y) {
+        const emitter = this.add.particles(x, y, 'item_coin', {
+            speed: { min: -200, max: 200 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 0.5, end: 0 },
+            blendMode: 'ADD',
+            lifespan: 300,
+            gravityY: 0
+        });
+        this.time.delayedCall(300, () => emitter.destroy());
+    }
+
+    gameOver() {
+        soundFx.stopBGM();
+        this.scene.start('GameOverScene', { score: this.score });
+    }
+}
+
+/**
+ * Character Select Scene
+ */
+class CharSelectScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'CharSelectScene' });
+    }
+
+    create() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+
+        this.add.text(width / 2, 80, '건스패밀리', { fontSize: '40px', color: '#facc15', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(width / 2, 130, '캐릭터를 선택하세요', { fontSize: '20px', color: '#fff' }).setOrigin(0.5);
+
+        // 건영 카드
+        const card1 = this.add.rectangle(width / 2 - 140, height / 2, 220, 280, 0x1e1e2e).setStrokeStyle(3, 0xa855f7).setInteractive();
+        this.add.rectangle(width / 2 - 140, height / 2 - 50, 50, 70, 0x111118).setStrokeStyle(2, 0xa855f7);
+        this.add.text(width / 2 - 140, height / 2 + 20, '건영 (블랙팬서)', { fontSize: '20px', color: '#a855f7', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(width / 2 - 140, height / 2 + 70, 'HP: 100\n게이지 충전 1.5배\n스킬: 자석+보호막', { fontSize: '14px', color: '#ccc', align: 'center' }).setOrigin(0.5);
+
+        // 건우 카드
+        const card2 = this.add.rectangle(width / 2 + 140, height / 2, 220, 280, 0x1e1e2e).setStrokeStyle(3, 0x22c55e).setInteractive();
+        this.add.rectangle(width / 2 + 140, height / 2 - 50, 60, 80, 0x15803d).setStrokeStyle(2, 0x4ade80);
+        this.add.text(width / 2 + 140, height / 2 + 20, '건우 (헐크)', { fontSize: '20px', color: '#22c55e', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(width / 2 + 140, height / 2 + 70, 'HP: 150\n높은 생존력\n스킬: 전멸+무적돌진', { fontSize: '14px', color: '#ccc', align: 'center' }).setOrigin(0.5);
+
+        card1.on('pointerdown', () => {
+            soundFx.init();
+            this.scene.start('MainGameScene', { character: 'gunyoung' });
+        });
+
+        card2.on('pointerdown', () => {
+            soundFx.init();
+            this.scene.start('MainGameScene', { character: 'gunwoo' });
+        });
+    }
+}
+
+/**
+ * Game Over Scene
+ */
+class GameOverScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'GameOverScene' });
+    }
+
+    init(data) {
+        this.finalScore = data.score || 0;
+    }
+
+    create() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+
+        this.add.text(width / 2, height / 2 - 80, 'GAME OVER', { fontSize: '48px', color: '#ef4444', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(width / 2, height / 2, `FINAL SCORE: ${this.finalScore}`, { fontSize: '28px', color: '#fff' }).setOrigin(0.5);
+
+        const restartBtn = this.add.rectangle(width / 2, height / 2 + 90, 200, 50, 0x3b82f6).setInteractive();
+        this.add.text(width / 2, height / 2 + 90, '다시 하기', { fontSize: '22px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+
+        restartBtn.on('pointerdown', () => {
+            this.scene.start('CharSelectScene');
+        });
+    }
+}
+
+// Phaser Game Configuration
 const config = {
     type: Phaser.AUTO,
     parent: 'game-container',
+    width: 960,
+    height: 540,
     scale: {
-        mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: 1280,
-        height: 720
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH
     },
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: 1500 },
+            gravity: { y: 0 },
             debug: false
         }
     },
-    // 🔥 멀티터치 입력 완벽 지원 (최대 3개 손가락 동시 인식)
-    input: {
-        activePointers: 3
-    },
-    scene: {
-        preload: preload,
-        create: create,
-        update: update
-    }
+    scene: [CharSelectScene, MainGameScene, GameOverScene]
 };
 
 const game = new Phaser.Game(config);
-
-// 전역 변수
-let selectedHero = null;
-let player;
-let groundTile;
-let obstacles;
-let coins;
-let hearts;
-
-// 이펙트 및 스킬 상태
-let shieldGraphics;
-let skillTimer = null;
-let warningTimer = null;
-
-let score = 0;
-let coinCount = 0;
-let playerHP = 100;
-let maxHP = 100;
-let isGameRunning = false;
-let jumpCount = 0;
-let isSliding = false;
-let skillGauge = 0;
-let isSkillActive = false;
-let isSkillEndingSoon = false;
-
-// ⏱️ 단계(Phase) & 속도 시스템 변수
-let gamePhase = 1;
-let baseGameSpeed = 420; // 60Hz/120Hz 구별 없는 픽셀/초 단위 속도
-let currentSpeed = 420;
-let gameTimer = 0;
-let spawnTimerEvent = null;
-let spawnInterval = 1400;
-
-// UI
-let jumpBtn, slideBtn, skillBtn, skillText;
-let hpBarFill, skillBarFill, scoreText, phaseText;
-let selectScreenContainer;
-
-function preload() {}
-
-function create() {
-    const scene = this;
-
-    // 초기 상태 리셋
-    gamePhase = 1;
-    baseGameSpeed = 420;
-    spawnInterval = 1400;
-    gameTimer = 0;
-
-    createBlockTextures(scene);
-
-    scene.bgFar = scene.add.tileSprite(0, 0, scene.scale.width, scene.scale.height, 'bgLayer').setOrigin(0, 0);
-
-    let groundY = scene.scale.height - 80;
-    groundTile = scene.add.tileSprite(0, groundY, scene.scale.width * 2, 160, 'groundBlock').setOrigin(0, 0);
-    scene.physics.add.existing(groundTile, true);
-
-    obstacles = scene.physics.add.group();
-    coins = scene.physics.add.group();
-    hearts = scene.physics.add.group();
-
-    shieldGraphics = scene.add.graphics().setDepth(20);
-
-    createInGameUI(scene);
-    createCharacterSelectScreen(scene);
-
-    scene.cursors = scene.input.keyboard.createCursorKeys();
-    scene.spaceKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-
-    // 1초 단위 타이머 (단계 및 속도 계산용)
-    scene.time.addEvent({
-        delay: 1000,
-        callback: () => {
-            if (isGameRunning) {
-                gameTimer++;
-                let newPhase = Math.floor(gameTimer / 30) + 1;
-                if (newPhase !== gamePhase) {
-                    levelUpPhase(scene, newPhase);
-                }
-            }
-        },
-        loop: true
-    });
-
-    scene.scale.on('resize', (gameSize) => {
-        scene.bgFar.setSize(gameSize.width, gameSize.height);
-        repositionUI(scene, gameSize);
-    });
-}
-
-// 🔥 갤럭시 S25 울트라(120Hz) 속도 폭주 방지: delta 값 기반 보정
-function update(time, delta) {
-    if (!isGameRunning) return;
-
-    // 초당 프레임 시간에 비례한 이동 비율 (60fps 기준 delta = 16.66ms -> dt = 1.0)
-    let dt = delta / 1000;
-
-    currentSpeed = isSkillActive ? baseGameSpeed * 1.3 : baseGameSpeed;
-
-    this.bgFar.tilePositionX += (currentSpeed * 0.3) * dt;
-    groundTile.tilePositionX += currentSpeed * dt;
-
-    // 장애물 및 아이템 이동
-    obstacles.children.iterate((obs) => {
-        if (obs) {
-            obs.x -= currentSpeed * dt;
-            if (obs.x < -150) obs.destroy();
-        }
-    });
-
-    coins.children.iterate((coin) => {
-        if (coin) {
-            if (isSkillActive && selectedHero === 'GUNYOUNG') {
-                this.physics.moveToObject(coin, player, 700);
-            } else {
-                coin.x -= currentSpeed * dt;
-            }
-            if (coin.x < -50) coin.destroy();
-        }
-    });
-
-    hearts.children.iterate((h) => {
-        if (h) {
-            h.x -= currentSpeed * dt;
-            if (h.x < -50) h.destroy();
-        }
-    });
-
-    // 키보드 조작
-    if (Phaser.Input.Keyboard.JustDown(this.cursors.up) || Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-        handleJump(this);
-    }
-    if (this.cursors.down.isDown) {
-        if (!isSliding) handleSlide(this, true);
-    } else {
-        if (isSliding) handleSlide(this, false);
-    }
-
-    updateShieldEffect(this);
-    updateUI();
-}
-
-function levelUpPhase(scene, newPhase) {
-    gamePhase = newPhase;
-    baseGameSpeed = 420 + (gamePhase - 1) * 70;
-    spawnInterval = Math.max(800, 1400 - (gamePhase - 1) * 100);
-
-    if (spawnTimerEvent) spawnTimerEvent.remove();
-    spawnTimerEvent = scene.time.addEvent({
-        delay: spawnInterval,
-        callback: () => { if (isGameRunning) spawnPattern(scene); },
-        loop: true
-    });
-
-    scene.cameras.main.flash(400, 241, 196, 15);
-    scene.cameras.main.shake(300, 0.01);
-
-    let lvlText = scene.add.text(scene.scale.width / 2, scene.scale.height / 2 - 50, `PHASE ${gamePhase} SPEED UP!`, {
-        fontSize: '42px', color: '#f1c40f', style: 'bold', stroke: '#000', strokeThickness: 6
-    }).setOrigin(0.5).setDepth(150);
-
-    scene.tweens.add({
-        targets: lvlText,
-        y: scene.scale.height / 2 - 100,
-        alpha: 0,
-        duration: 1500,
-        onComplete: () => lvlText.destroy()
-    });
-}
-
-function createBlockTextures(scene) {
-    const g = scene.make.graphics({ x: 0, y: 0, add: false });
-
-    g.fillStyle(0x1a1c2e); g.fillRect(0, 0, 64, 64);
-    g.fillStyle(0x2d3142); g.fillCircle(32, 32, 4);
-    g.generateTexture('bgLayer', 64, 64);
-
-    g.clear();
-    g.fillStyle(0x34495e); g.fillRect(0, 0, 64, 64);
-    g.fillStyle(0x2c3e50); g.fillRect(0, 0, 64, 12);
-    g.generateTexture('groundBlock', 64, 64);
-
-    // 건영 서있기
-    g.clear();
-    g.fillStyle(0x2c2c54); g.fillRect(6, 6, 36, 52); 
-    g.fillStyle(0xa55eea); g.fillRect(10, 10, 28, 6);  
-    g.fillStyle(0x00d2d3); g.fillRect(12, 18, 6, 4); g.fillRect(28, 18, 6, 4); 
-    g.generateTexture('heroGunyoung', 48, 64);
-
-    // 건영 숙이기
-    g.clear();
-    g.fillStyle(0x2c2c54); g.fillRect(4, 8, 48, 24); 
-    g.fillStyle(0xa55eea); g.fillRect(8, 12, 16, 16);  
-    g.fillStyle(0x00d2d3); g.fillRect(32, 14, 6, 4); g.fillRect(40, 14, 6, 4); 
-    g.generateTexture('heroGunyoungSlide', 56, 32);
-
-    // 건우 서있기
-    g.clear();
-    g.fillStyle(0x26de81); g.fillRect(4, 4, 40, 56); 
-    g.fillStyle(0x8854d0); g.fillRect(4, 38, 40, 22); 
-    g.fillStyle(0xff4757); g.fillRect(10, 14, 8, 6); g.fillRect(30, 14, 8, 6); 
-    g.generateTexture('heroGunwoo', 48, 64);
-
-    // 건우 숙이기
-    g.clear();
-    g.fillStyle(0x26de81); g.fillRect(4, 6, 48, 26); 
-    g.fillStyle(0x8854d0); g.fillRect(4, 16, 20, 16); 
-    g.fillStyle(0xff4757); g.fillRect(30, 12, 8, 6); g.fillRect(42, 12, 8, 6); 
-    g.generateTexture('heroGunwooSlide', 56, 32);
-
-    // 장애물 (높은 점프용)
-    g.clear();
-    g.fillStyle(0xeb4d4b); g.fillRect(0, 0, 40, 75);
-    g.fillStyle(0xffbe76); g.fillRect(4, 6, 32, 12);
-    g.generateTexture('obstacleHigh', 40, 75);
-
-    // 장애물 (공중 숙이기용)
-    g.clear();
-    g.fillStyle(0xe74c3c); g.fillRect(0, 0, 120, 35);
-    g.fillStyle(0xf1c40f); g.fillRect(8, 8, 104, 18);
-    g.generateTexture('obstacleLow', 120, 35);
-
-    // 동전
-    g.clear();
-    g.fillStyle(0xf1c40f); g.fillCircle(14, 14, 14);
-    g.fillStyle(0xf39c12); g.fillCircle(14, 14, 8);
-    g.generateTexture('coinBlock', 28, 28);
-
-    // 하트
-    g.clear();
-    g.fillStyle(0xff4757);
-    g.fillRect(4, 0, 8, 16); g.fillRect(12, 0, 8, 16);
-    g.fillRect(0, 4, 24, 12); g.fillRect(4, 16, 16, 4); g.fillRect(8, 20, 8, 4);
-    g.generateTexture('heartItem', 24, 24);
-}
-
-// 🔥 주소창 잘림 방지를 위해 Y축 위치 하향 배치 (+40px 안전거리 확보)
-function createCharacterSelectScreen(scene) {
-    selectScreenContainer = scene.add.container(0, 0).setDepth(100);
-
-    let cx = scene.scale.width / 2;
-    let cy = scene.scale.height / 2 + 30; // 모바일 브라우저 주소창 고려 하향 조정
-
-    let bgOverlay = scene.add.rectangle(cx, cy - 30, scene.scale.width, scene.scale.height, 0x000000, 0.65);
-    
-    let titleText = scene.add.text(cx, cy - 180, '⚡ 건스패밀리 ⚡', {
-        fontSize: '36px', color: '#f1c40f', style: 'bold'
-    }).setOrigin(0.5);
-
-    let subText = scene.add.text(cx, cy - 135, '캐릭터를 터치해서 시작하세요!', {
-        fontSize: '18px', color: '#ffffff'
-    }).setOrigin(0.5);
-
-    let card1 = scene.add.rectangle(cx - 130, cy, 210, 220, 0x2c2c54, 0.85).setInteractive();
-    card1.setStrokeStyle(3, 0xa55eea);
-    let img1 = scene.add.image(cx - 130, cy - 50, 'heroGunyoung').setScale(1.2);
-    let name1 = scene.add.text(cx - 130, cy + 15, '건영 (블랙팬서)', { fontSize: '20px', color: '#a55eea', style: 'bold' }).setOrigin(0.5);
-    let desc1 = scene.add.text(cx - 130, cy + 55, '스킬: 코인 자석\n+ 회피 보호막', { fontSize: '14px', color: '#dddddd', align: 'center' }).setOrigin(0.5);
-    
-    card1.on('pointerdown', () => {
-        requestFullscreenMode(scene);
-        selectHero(scene, 'GUNYOUNG');
-    });
-
-    let card2 = scene.add.rectangle(cx + 130, cy, 210, 220, 0x1e824c, 0.85).setInteractive();
-    card2.setStrokeStyle(3, 0x26de81);
-    let img2 = scene.add.image(cx + 130, cy - 50, 'heroGunwoo').setScale(1.2);
-    let name2 = scene.add.text(cx + 130, cy + 15, '건우 (헐크)', { fontSize: '20px', color: '#26de81', style: 'bold' }).setOrigin(0.5);
-    let desc2 = scene.add.text(cx + 130, cy + 55, '스킬: 장애물 파괴\n+ 무적 돌진', { fontSize: '14px', color: '#dddddd', align: 'center' }).setOrigin(0.5);
-    
-    card2.on('pointerdown', () => {
-        requestFullscreenMode(scene);
-        selectHero(scene, 'GUNWOO');
-    });
-
-    selectScreenContainer.add([bgOverlay, titleText, subText, card1, img1, name1, desc1, card2, img2, name2, desc2]);
-}
-
-// 🔥 게임 시작 시 모바일 브라우저 전체 화면 자동 요청 (주소창 숨기기)
-function requestFullscreenMode(scene) {
-    if (!scene.scale.isFullscreen && scene.scale.startFullscreen) {
-        try {
-            scene.scale.startFullscreen();
-        } catch (e) {
-            console.log("Fullscreen blocked:", e);
-        }
-    }
-}
-
-function selectHero(scene, heroType) {
-    selectedHero = heroType;
-    selectScreenContainer.setVisible(false);
-
-    let texture = (heroType === 'GUNYOUNG') ? 'heroGunyoung' : 'heroGunwoo';
-    let groundY = scene.scale.height - 80;
-
-    player = scene.physics.add.sprite(160, groundY, texture);
-    player.setOrigin(0.5, 1.0); 
-    player.setCollideWorldBounds(true);
-
-    scene.physics.add.collider(player, groundTile, () => {
-        jumpCount = 0;
-    });
-
-    scene.physics.add.overlap(player, obstacles, hitObstacle, null, scene);
-    scene.physics.add.overlap(player, coins, collectCoin, null, scene);
-    scene.physics.add.overlap(player, hearts, collectHeart, null, scene);
-
-    maxHP = (selectedHero === 'GUNWOO') ? 150 : 100;
-    playerHP = maxHP;
-
-    isGameRunning = true;
-
-    spawnTimerEvent = scene.time.addEvent({
-        delay: spawnInterval,
-        callback: () => { if (isGameRunning) spawnPattern(scene); },
-        loop: true
-    });
-}
-
-// 🔥 안드로이드 모바일 터치 완벽 보완 UI 생성
-function createInGameUI(scene) {
-    let w = scene.scale.width;
-    let h = scene.scale.height;
-
-    scene.add.rectangle(130, 30, 204, 24, 0x333333).setDepth(50);
-    hpBarFill = scene.add.rectangle(30, 30, 200, 20, 0x2ecc71).setOrigin(0, 0.5).setDepth(50);
-
-    scene.add.rectangle(130, 60, 204, 14, 0x333333).setDepth(50);
-    skillBarFill = scene.add.rectangle(30, 60, 0, 10, 0x9b59b6).setOrigin(0, 0.5).setDepth(50);
-
-    phaseText = scene.add.text(w / 2, 35, 'PHASE 1 (30s)', {
-        fontSize: '24px', color: '#e74c3c', style: 'bold', stroke: '#000', strokeThickness: 4
-    }).setOrigin(0.5).setDepth(50);
-
-    scoreText = scene.add.text(w - 20, 30, '점수: 0  |  🪙 0', {
-        fontSize: '22px', color: '#f1c40f', style: 'bold'
-    }).setOrigin(1, 0.5).setDepth(50);
-
-    // 점프 버튼
-    jumpBtn = scene.add.circle(90, h - 90, 55, 0x3498db, 0.85).setInteractive().setDepth(50);
-    scene.add.text(90, h - 90, '점프', { fontSize: '22px', color: '#fff', style: 'bold' }).setOrigin(0.5).setDepth(51);
-
-    // 숙이기 버튼 (터치 범위 확장 및 다중 이벤트 등록)
-    slideBtn = scene.add.circle(230, h - 80, 50, 0xe67e22, 0.85).setInteractive().setDepth(50);
-    scene.add.text(230, h - 80, '숙이기', { fontSize: '20px', color: '#fff', style: 'bold' }).setOrigin(0.5).setDepth(51);
-
-    // 스킬 버튼
-    skillBtn = scene.add.circle(w - 90, h - 90, 60, 0x8e44ad, 0.5).setInteractive().setDepth(50);
-    skillText = scene.add.text(w - 90, h - 90, '스킬!', { fontSize: '24px', color: '#fff', style: 'bold' }).setOrigin(0.5).setDepth(51);
-
-    jumpBtn.on('pointerdown', () => handleJump(scene));
-
-    // 🔥 안드로이드 터치 이슈 해결: pointercancel 이벤트 추가 등록
-    slideBtn.on('pointerdown', () => handleSlide(scene, true));
-    slideBtn.on('pointerup', () => handleSlide(scene, false));
-    slideBtn.on('pointerout', () => handleSlide(scene, false));
-    slideBtn.on('pointercancel', () => handleSlide(scene, false));
-
-    skillBtn.on('pointerdown', () => useHeroSkill(scene));
-}
-
-function handleJump(scene) {
-    if (!isGameRunning || isSliding) return;
-    if (jumpCount < 2) {
-        player.setVelocityY(-620);
-        jumpCount++;
-    }
-}
-
-function handleSlide(scene, start) {
-    if (!isGameRunning || !player) return;
-
-    if (start && !isSliding) {
-        isSliding = true;
-        let slideTexture = (selectedHero === 'GUNYOUNG') ? 'heroGunyoungSlide' : 'heroGunwooSlide';
-        player.setTexture(slideTexture);
-        player.body.setSize(56, 32);
-
-        if (!player.body.touching.down) {
-            player.setVelocityY(650);
-        }
-    } else if (!start && isSliding) {
-        isSliding = false;
-        let standTexture = (selectedHero === 'GUNYOUNG') ? 'heroGunyoung' : 'heroGunwoo';
-        player.setTexture(standTexture);
-        player.body.setSize(48, 64);
-    }
-}
-
-function useHeroSkill(scene) {
-    if (skillGauge < 100 || isSkillActive || !isGameRunning) return;
-
-    skillGauge = 0;
-    isSkillActive = true;
-    isSkillEndingSoon = false;
-
-    if (selectedHero === 'GUNWOO') {
-        scene.cameras.main.shake(400, 0.03);
-        obstacles.children.iterate((obs) => { if (obs) obs.destroy(); });
-    } else {
-        scene.cameras.main.flash(300, 165, 94, 234);
-    }
-
-    warningTimer = scene.time.delayedCall(3500, () => {
-        isSkillEndingSoon = true;
-    });
-
-    skillTimer = scene.time.delayedCall(5000, () => {
-        isSkillActive = false;
-        isSkillEndingSoon = false;
-        shieldGraphics.clear();
-        player.clearTint();
-    });
-}
-
-function updateShieldEffect(scene) {
-    shieldGraphics.clear();
-    if (!isSkillActive || !player) return;
-
-    let time = scene.time.now;
-    let radius = (selectedHero === 'GUNWOO') ? 55 : 45;
-    let mainColor = (selectedHero === 'GUNWOO') ? 0x26de81 : 0xa55eea;
-
-    let centerY = player.y - (player.height / 2);
-
-    if (isSkillEndingSoon) {
-        let blink = Math.floor(time / 100) % 2 === 0;
-        if (blink) {
-            shieldGraphics.lineStyle(6, 0xff4757, 0.9);
-            shieldGraphics.fillStyle(0xff4757, 0.2);
-            shieldGraphics.strokeCircle(player.x, centerY, radius + 4);
-            shieldGraphics.fillCircle(player.x, centerY, radius + 4);
-        }
-    } else {
-        let alphaPulse = 0.3 + Math.sin(time / 150) * 0.15;
-        shieldGraphics.lineStyle(5, mainColor, 0.9);
-        shieldGraphics.strokeCircle(player.x, centerY, radius);
-        shieldGraphics.fillStyle(mainColor, alphaPulse);
-        shieldGraphics.fillCircle(player.x, centerY, radius);
-
-        let angle = (time / 200) % (Math.PI * 2);
-        let orbitalX = player.x + Math.cos(angle) * radius;
-        let orbitalY = centerY + Math.sin(angle) * radius;
-        shieldGraphics.fillStyle(0xffffff, 1);
-        shieldGraphics.fillCircle(orbitalX, orbitalY, 6);
-    }
-}
-
-function spawnPattern(scene) {
-    let groundY = scene.scale.height - 80;
-    let type = Phaser.Math.Between(0, 10);
-
-    if (type <= 2) {
-        let obsY = groundY - 40; 
-        let obs = obstacles.create(scene.scale.width + 60, obsY, 'obstacleLow');
-        obs.setOrigin(0, 1.0);
-        obs.body.allowGravity = false;
-        obs.setImmovable(true);
-
-        for (let i = 0; i < 4; i++) {
-            let coin = coins.create(scene.scale.width + 20 + (i * 38), groundY - 14, 'coinBlock');
-            coin.setOrigin(0.5, 1.0);
-            coin.body.allowGravity = false;
-        }
-
-    } else if (type <= 4) {
-        for (let i = 0; i < 2; i++) {
-            let obs = obstacles.create(scene.scale.width + 50 + (i * 220), groundY, 'obstacleHigh');
-            obs.setOrigin(0, 1.0);
-            obs.body.allowGravity = false;
-            obs.setImmovable(true);
-
-            let coin = coins.create(scene.scale.width + 50 + (i * 220), groundY - 120, 'coinBlock');
-            coin.setOrigin(0.5, 1.0);
-            coin.body.allowGravity = false;
-        }
-
-    } else if (type <= 6) {
-        let obsLow = obstacles.create(scene.scale.width + 50, groundY - 40, 'obstacleLow');
-        obsLow.setOrigin(0, 1.0);
-        obsLow.body.allowGravity = false;
-        obsLow.setImmovable(true);
-
-        let obsHigh = obstacles.create(scene.scale.width + 280, groundY, 'obstacleHigh');
-        obsHigh.setOrigin(0, 1.0);
-        obsHigh.body.allowGravity = false;
-        obsHigh.setImmovable(true);
-
-    } else if (type <= 8) {
-        for (let i = 0; i < 2; i++) {
-            let obsLow = obstacles.create(scene.scale.width + 50 + (i * 120), groundY - 40, 'obstacleLow');
-            obsLow.setOrigin(0, 1.0);
-            obsLow.body.allowGravity = false;
-            obsLow.setImmovable(true);
-        }
-        for (let i = 0; i < 6; i++) {
-            let coin = coins.create(scene.scale.width + 30 + (i * 35), groundY - 14, 'coinBlock');
-            coin.setOrigin(0.5, 1.0);
-            coin.body.allowGravity = false;
-        }
-
-    } else {
-        for (let i = 0; i < 5; i++) {
-            let coin = coins.create(scene.scale.width + (i * 35), groundY - 30, 'coinBlock');
-            coin.setOrigin(0.5, 1.0);
-            coin.body.allowGravity = false;
-        }
-        if (Phaser.Math.Between(0, 1) === 0) {
-            let h = hearts.create(scene.scale.width + 220, groundY - 100, 'heartItem');
-            h.setOrigin(0.5, 1.0);
-            h.body.allowGravity = false;
-        }
-    }
-}
-
-function hitObstacle(p, obs) {
-    if (isSkillActive) {
-        obs.destroy();
-        score += 300;
-        return;
-    }
-
-    obs.destroy();
-    playerHP -= 25;
-    this.cameras.main.shake(200, 0.015);
-    if (navigator.vibrate) navigator.vibrate(120);
-
-    if (playerHP <= 0) {
-        gameOver(this);
-    }
-}
-
-function collectCoin(p, coin) {
-    coin.destroy();
-    score += 100;
-    coinCount++;
-
-    if (skillGauge < 100) {
-        skillGauge += 1.5;
-    }
-}
-
-function collectHeart(p, h) {
-    h.destroy();
-    playerHP = Math.min(maxHP, playerHP + 30);
-}
-
-function updateUI() {
-    scoreText.setText(`점수: ${score}  |  🪙 ${coinCount}`);
-
-    let nextLevelSec = 30 - (gameTimer % 30);
-    phaseText.setText(`PHASE ${gamePhase} (${nextLevelSec}s)`);
-
-    let hpRatio = Math.max(0, playerHP / maxHP);
-    hpBarFill.width = 200 * hpRatio;
-
-    skillBarFill.width = 200 * (Math.min(100, skillGauge) / 100);
-
-    if (skillGauge >= 100) {
-        skillBtn.setAlpha(1.0);
-        skillBtn.setFillStyle(0x9b59b6);
-    } else {
-        skillBtn.setAlpha(0.4);
-        skillBtn.setFillStyle(0x555555);
-    }
-}
-
-function gameOver(scene) {
-    isGameRunning = false;
-    scene.physics.pause();
-    shieldGraphics.clear();
-    if (spawnTimerEvent) spawnTimerEvent.remove();
-
-    let cx = scene.scale.width / 2;
-    let cy = scene.scale.height / 2;
-
-    scene.add.text(cx, cy - 60, 'GAME OVER', {
-        fontSize: '48px', color: '#e74c3c', style: 'bold'
-    }).setOrigin(0.5).setDepth(100);
-
-    scene.add.text(cx, cy + 40, `도달 단계: PHASE ${gamePhase}\n최종 점수: ${score}\n획득 코인: 🪙 ${coinCount}\n\n[화면을 터치하여 다시 시작]`, {
-        fontSize: '22px', color: '#ffffff', align: 'center', lineSpacing: 8
-    }).setOrigin(0.5).setDepth(100);
-
-    scene.input.once('pointerdown', () => {
-        score = 0;
-        coinCount = 0;
-        skillGauge = 0;
-        isSkillActive = false;
-        isSkillEndingSoon = false;
-        scene.scene.restart();
-    });
-}
-
-function repositionUI(scene, gameSize) {
-    let w = gameSize.width;
-    let h = gameSize.height;
-
-    if (jumpBtn) jumpBtn.setPosition(90, h - 90);
-    if (slideBtn) slideBtn.setPosition(230, h - 80);
-    if (skillBtn) skillBtn.setPosition(w - 90, h - 90);
-    if (skillText) skillText.setPosition(w - 90, h - 90);
-    if (scoreText) scoreText.setPosition(w - 20, 30);
-    if (phaseText) phaseText.setPosition(w / 2, 35);
-}
 </script>
 </body>
 </html>
