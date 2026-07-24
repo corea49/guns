@@ -82,8 +82,8 @@ class SoundFx {
         gain.connect(this.ctx.destination);
 
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(987.77, this.ctx.currentTime); // B5
-        osc.frequency.setValueAtTime(1318.51, this.ctx.currentTime + 0.08); // E6
+        osc.frequency.setValueAtTime(987.77, this.ctx.currentTime);
+        osc.frequency.setValueAtTime(1318.51, this.ctx.currentTime + 0.08);
 
         gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
@@ -133,7 +133,7 @@ class SoundFx {
         this.init();
         this.isBgmPlaying = true;
         let noteIdx = 0;
-        const notes = [220, 247, 261, 293, 329, 293, 261, 247]; // Synth Bass loop
+        const notes = [220, 247, 261, 293, 329, 293, 261, 247];
 
         this.bgmTimer = setInterval(() => {
             if (!this.isBgmPlaying || !this.ctx) return;
@@ -171,60 +171,175 @@ class MainGameScene extends Phaser.Scene {
     }
 
     init(data) {
-        this.selectedChar = data.character || 'gunyoung'; // 'gunyoung' 또는 'gunwoo'
+        this.selectedChar = data.character || 'gunyoung';
     }
 
     preload() {
-        // Procedural Textures 생성
         this.createProceduralTextures();
     }
 
     createProceduralTextures() {
-        // 건영 (블랙팬서 컨셉: 보라/블랙)
-        const gyGfx = this.make.graphics({x: 0, y: 0, add: false});
-        gyGfx.fillStyle(0x111118);
-        gyGfx.fillRoundedRect(0, 0, 50, 70, 8);
-        gyGfx.lineStyle(3, 0xa855f7);
-        gyGfx.strokeRoundedRect(2, 2, 46, 66, 6);
-        gyGfx.fillStyle(0xa855f7);
-        gyGfx.fillRect(30, 15, 15, 8); // 눈/바이저
-        gyGfx.generateTexture('char_gunyoung', 50, 70);
+        // ==========================================
+        // 1. 건영 (블랙팬서 - 디테일 고품질 디자인)
+        // ==========================================
+        const gyCanvas = this.textures.createCanvas('char_gunyoung', 70, 90);
+        const ctx1 = gyCanvas.context;
 
-        // 건우 (헐크 컨셉: 녹색/대형)
-        const gwGfx = this.make.graphics({x: 0, y: 0, add: false});
-        gwGfx.fillStyle(0x15803d);
-        gwGfx.fillRoundedRect(0, 0, 60, 80, 8);
-        gwGfx.lineStyle(4, 0x4ade80);
-        gwGfx.strokeRoundedRect(2, 2, 56, 76, 6);
-        gwGfx.fillStyle(0xef4444);
-        gwGfx.fillRect(35, 18, 18, 8); // 눈
-        gwGfx.generateTexture('char_gunwoo', 60, 80);
+        // 슈트 기본 입체 베이스 (다크 챠콜)
+        let gradGY = ctx1.createLinearGradient(0, 0, 70, 90);
+        gradGY.addColorStop(0, '#2a2a38');
+        gradGY.addColorStop(0.5, '#12121c');
+        gradGY.addColorStop(1, '#08080f');
+        ctx1.fillStyle = gradGY;
+        
+        // 메인 바디 패스
+        ctx1.beginPath();
+        ctx1.moveTo(20, 15); ctx1.lineTo(30, 2); ctx1.lineTo(40, 15); // 고양이 귀
+        ctx1.lineTo(55, 18); ctx1.lineTo(62, 35); ctx1.lineTo(58, 65); // 우측 상체
+        ctx1.lineTo(50, 88); ctx1.lineTo(20, 88); ctx1.lineTo(12, 65); // 하체 및 좌측
+        ctx1.lineTo(8, 35); ctx1.lineTo(15, 18);
+        ctx1.closePath();
+        ctx1.fill();
 
-        // 바닥 Obstacle (높은 장애물)
+        // 비브라늄 보라색 은은한 테두리
+        ctx1.strokeStyle = '#c084fc';
+        ctx1.lineWidth = 2.5;
+        ctx1.stroke();
+
+        // 가슴 근육 & 비브라늄 에너지 텍스처 (V자 발광 라인)
+        ctx1.strokeStyle = '#a855f7';
+        ctx1.lineWidth = 2;
+        ctx1.beginPath();
+        ctx1.moveTo(22, 38); ctx1.lineTo(35, 52); ctx1.lineTo(48, 38);
+        ctx1.moveTo(25, 45); ctx1.lineTo(35, 56); ctx1.lineTo(45, 45);
+        ctx1.moveTo(35, 56); ctx1.lineTo(35, 75); // 중앙 라인
+        ctx1.stroke();
+
+        // 비브라늄 핑거 목걸이 (금속 송곳니 형태)
+        ctx1.fillStyle = '#e2e8f0';
+        for(let i=0; i<5; i++) {
+            ctx1.beginPath();
+            ctx1.moveTo(22 + i*6, 30);
+            ctx1.lineTo(25 + i*6, 37);
+            ctx1.lineTo(28 + i*6, 30);
+            ctx1.fill();
+        }
+
+        // 마스크 안광 (Visor Eye - 날카로운 발광 바이저)
+        ctx1.fillStyle = '#f0abfc';
+        ctx1.shadowColor = '#c084fc';
+        ctx1.shadowBlur = 8;
+        ctx1.beginPath();
+        ctx1.moveTo(38, 20); ctx1.lineTo(52, 17); ctx1.lineTo(48, 24); ctx1.closePath(); ctx1.fill();
+        ctx1.beginPath();
+        ctx1.moveTo(32, 20); ctx1.lineTo(18, 17); ctx1.lineTo(22, 24); ctx1.closePath(); ctx1.fill();
+        ctx1.shadowBlur = 0; // 그림자 초기화
+
+        gyCanvas.refresh();
+
+        // ==========================================
+        // 2. 건우 (헐크 - 디테일 고품질 디자인)
+        // ==========================================
+        const gwCanvas = this.textures.createCanvas('char_gunwoo', 85, 100);
+        const ctx2 = gwCanvas.context;
+
+        // 피부 근육 베이스 (딥 그린 음영)
+        let gradGW = ctx2.createLinearGradient(0, 0, 85, 100);
+        gradGW.addColorStop(0, '#22c55e');
+        gradGW.addColorStop(0.6, '#15803d');
+        gradGW.addColorStop(1, '#064e3b');
+        ctx2.fillStyle = gradGW;
+
+        // 거대한 상체 & 근육 바디 패스
+        ctx2.beginPath();
+        ctx2.moveTo(20, 20); ctx2.lineTo(35, 8); ctx2.lineTo(50, 8); ctx2.lineTo(65, 20); // 머리
+        ctx2.lineTo(80, 25); ctx2.lineTo(82, 60); ctx2.lineTo(70, 70); // 압도적인 어깨/상체
+        ctx2.lineTo(68, 98); ctx2.lineTo(17, 98); ctx2.lineTo(15, 70); // 하체
+        ctx2.lineTo(3, 60); ctx2.lineTo(5, 25);
+        ctx2.closePath();
+        ctx2.fill();
+
+        ctx2.strokeStyle = '#4ade80';
+        ctx2.lineWidth = 3;
+        ctx2.stroke();
+
+        // 대흉근 & 복근 디테일 선 (음영 깊이)
+        ctx2.strokeStyle = '#052e16';
+        ctx2.lineWidth = 3;
+        ctx2.beginPath();
+        // 가슴근육
+        ctx2.arc(32, 42, 13, 0, Math.PI, false);
+        ctx2.arc(53, 42, 13, 0, Math.PI, false);
+        // 복근 6팩
+        ctx2.moveTo(42, 42); ctx2.lineTo(42, 70);
+        ctx2.moveTo(30, 55); ctx2.lineTo(55, 55);
+        ctx2.moveTo(32, 65); ctx2.lineTo(53, 65);
+        ctx2.stroke();
+
+        // 시그니처 찢어진 보라색 바지
+        ctx2.fillStyle = '#6b21a8';
+        ctx2.beginPath();
+        ctx2.moveTo(14, 70); ctx2.lineTo(71, 70);
+        ctx2.lineTo(73, 95); ctx2.lineTo(60, 92); ctx2.lineTo(50, 98); ctx2.lineTo(35, 91); ctx2.lineTo(20, 97); ctx2.lineTo(12, 92);
+        ctx2.closePath();
+        ctx2.fill();
+
+        // 얼굴 - 찌푸린 분노의 눈썹 & 붉은 눈 & 이빨
+        ctx2.fillStyle = '#ef4444'; // 분노한 눈
+        ctx2.beginPath(); ctx2.arc(33, 23, 3.5, 0, Math.PI * 2); ctx2.fill();
+        ctx2.beginPath(); ctx2.arc(52, 23, 3.5, 0, Math.PI * 2); ctx2.fill();
+
+        ctx2.strokeStyle = '#022c22'; // 검은 찌푸린 눈썹
+        ctx2.lineWidth = 4;
+        ctx2.beginPath();
+        ctx2.moveTo(26, 18); ctx2.lineTo(38, 23);
+        ctx2.moveTo(59, 18); ctx2.lineTo(47, 23);
+        ctx2.stroke();
+
+        // 분노의 이빨 앙물기
+        ctx2.fillStyle = '#ffffff';
+        ctx2.fillRect(36, 29, 13, 5);
+        ctx2.strokeStyle = '#000000';
+        ctx2.lineWidth = 1;
+        ctx2.strokeRect(36, 29, 13, 5);
+
+        // 머리 잔머리 (더부룩한 헐크 머리)
+        ctx2.fillStyle = '#064e3b';
+        ctx2.beginPath();
+        ctx2.moveTo(26, 12); ctx2.lineTo(30, 3); ctx2.lineTo(36, 10);
+        ctx2.lineTo(42, 2); ctx2.lineTo(48, 10); ctx2.lineTo(55, 4); ctx2.lineTo(58, 12);
+        ctx2.fill();
+
+        gwCanvas.refresh();
+
+        // ==========================================
+        // 3. 장애물 & 아이템 고급 텍스처
+        // ==========================================
         const obsHigh = this.make.graphics({x: 0, y: 0, add: false});
-        obsHigh.fillStyle(0xef4444);
-        obsHigh.fillRect(0, 0, 45, 65);
-        obsHigh.lineStyle(3, 0xffffff);
-        obsHigh.strokeRect(0, 0, 45, 65);
+        obsHigh.fillStyle(0xd97706);
+        obsHigh.fillRoundedRect(0, 0, 45, 65, 6);
+        obsHigh.lineStyle(3, 0xfef08a);
+        obsHigh.strokeRoundedRect(2, 2, 41, 61, 4);
         obsHigh.generateTexture('obs_high', 45, 65);
 
-        // 공중 Obstacle (숙이기용)
         const obsAir = this.make.graphics({x: 0, y: 0, add: false});
-        obsAir.fillStyle(0xf97316);
-        obsAir.fillRect(0, 0, 70, 40);
-        obsAir.lineStyle(3, 0xffffff);
-        obsAir.strokeRect(0, 0, 70, 40);
-        obsAir.generateTexture('obs_air', 70, 40);
+        obsAir.fillStyle(0xdc2626);
+        obsAir.fillRoundedRect(0, 0, 75, 40, 6);
+        obsAir.lineStyle(3, 0xfca5a5);
+        obsAir.strokeRoundedRect(2, 2, 71, 36, 4);
+        obsAir.generateTexture('obs_air', 75, 40);
 
-        // 코인
+        // 입체 코인
         const coinGfx = this.make.graphics({x: 0, y: 0, add: false});
         coinGfx.fillStyle(0xeab308);
-        coinGfx.fillCircle(12, 12, 12);
-        coinGfx.lineStyle(2, 0xffffff);
-        coinGfx.strokeCircle(12, 12, 10);
-        coinGfx.generateTexture('item_coin', 24, 24);
+        coinGfx.fillCircle(14, 14, 14);
+        coinGfx.fillStyle(0xfef08a);
+        coinGfx.fillCircle(11, 11, 10);
+        coinGfx.fillStyle(0xca8a04);
+        coinGfx.fillCircle(14, 14, 8);
+        coinGfx.generateTexture('item_coin', 28, 28);
 
-        // 하트 (HP 회복)
+        // 하트
         const heartGfx = this.make.graphics({x: 0, y: 0, add: false});
         heartGfx.fillStyle(0xec4899);
         heartGfx.fillCircle(8, 8, 8);
@@ -235,86 +350,74 @@ class MainGameScene extends Phaser.Scene {
 
     create() {
         soundFx.startBGM();
-
-        // 120Hz 지원을 위한 터치 포인트 설정 (3개 이상 멀티터치 지원)
         this.input.addPointer(2);
 
-        // 스펙 세팅
         if (this.selectedChar === 'gunyoung') {
             this.maxHp = 100;
             this.charTexture = 'char_gunyoung';
-            this.gaugeMultiplier = 1.5; // 스킬 게이지 1.5배
+            this.gaugeMultiplier = 1.5; // 코인 약 67개면 풀충전
             this.skillType = 'MAGNET_SHIELD';
         } else {
             this.maxHp = 150;
             this.charTexture = 'char_gunwoo';
-            this.gaugeMultiplier = 1.0;
+            this.gaugeMultiplier = 1.0; // 코인 100개 풀충전
             this.skillType = 'DESTROY_RUSH';
         }
 
         this.hp = this.maxHp;
         this.score = 0;
-        this.skillGauge = 0; // 0 ~ 100
+        this.coinCount = 0;
         this.isSkillActive = false;
         this.skillTimer = 0;
         this.isSliding = false;
         this.phase = 1;
-        this.baseSpeed = 380; // 초당 이동 픽셀 (Frame Independent)
+        this.baseSpeed = 380;
         this.currentSpeed = this.baseSpeed;
         this.phaseTime = 0;
 
-        // SafeArea 및 화면 배치
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
-        this.groundY = height - 120; // Y축 여백 하향 배치로 주소창/하단바 interference 방지
+        this.groundY = height - 100;
 
         // 배경
         this.bg = this.add.tileSprite(width / 2, height / 2, width, height, null).setTileScale(1, 1);
         const bgGfx = this.add.graphics();
-        bgGfx.fillStyle(0x1e1e2e);
+        bgGfx.fillStyle(0x0f172a);
         bgGfx.fillRect(0, 0, width, height);
-        bgGfx.lineStyle(1, 0x313244, 0.5);
+        bgGfx.lineStyle(1, 0x1e293b, 0.5);
         for(let i=0; i<width; i+=40) bgGfx.lineBetween(i, 0, i, height);
 
-        // 바닥 그래픽
+        // 바닥
         this.ground = this.add.rectangle(width / 2, this.groundY + 30, width, 60, 0x334155);
         this.physics.add.existing(this.ground, true);
 
         // 플레이어 설정
-        this.player = this.physics.add.sprite(120, this.groundY - 50, this.charTexture);
+        this.player = this.physics.add.sprite(120, this.groundY, this.charTexture);
+        this.player.setOrigin(0.5, 1);
         this.player.setCollideWorldBounds(true);
         this.player.setGravityY(1600);
         this.physics.add.collider(this.player, this.ground);
 
-        // 플레이어 히트박스 보정
-        this.originalBodyWidth = this.player.width;
-        this.originalBodyHeight = this.player.height;
+        this.originalWidth = this.player.width;
+        this.originalHeight = this.player.height;
 
-        // 스킬 보호막 이펙트 (Graphics)
         this.shieldGfx = this.add.graphics();
         this.shieldGfx.setVisible(false);
 
-        // 그룹 생성
         this.obstacles = this.physics.add.group();
         this.coins = this.physics.add.group();
         this.hearts = this.physics.add.group();
 
-        // 충돌 설정
         this.physics.add.overlap(this.player, this.obstacles, this.handleObstacleCollision, null, this);
         this.physics.add.overlap(this.player, this.coins, this.collectCoin, null, this);
         this.physics.add.overlap(this.player, this.hearts, this.collectHeart, null, this);
 
-        // 장애물/아이템 스폰 타이머
         this.spawnTimer = 0;
-        this.spawnInterval = 2.0; // 초 단위
+        this.spawnInterval = 2.0;
 
-        // UI 레이아웃 (SafeArea 고려)
         this.createUI();
-
-        // 모바일 터치 컨트롤 생성
         this.createControls();
 
-        // Fullscreen 이벤트
         this.input.on('pointerdown', () => {
             if (!this.scale.isFullscreen) {
                 this.scale.startFullscreen();
@@ -325,19 +428,19 @@ class MainGameScene extends Phaser.Scene {
     createUI() {
         const width = this.cameras.main.width;
         
-        // HP 바
-        this.add.rectangle(140, 40, 204, 24, 0x000000, 0.5);
-        this.hpBar = this.add.rectangle(40, 40, 200, 20, 0x22c55e).setOrigin(0, 0.5);
+        // 체력바
+        this.add.rectangle(140, 35, 204, 22, 0x000000, 0.5);
+        this.hpBar = this.add.rectangle(40, 35, 200, 18, 0x22c55e).setOrigin(0, 0.5);
 
-        // 스킬 게이지 바
-        this.add.rectangle(140, 70, 204, 18, 0x000000, 0.5);
-        this.skillBar = this.add.rectangle(40, 70, 0, 14, 0x3b82f6).setOrigin(0, 0.5);
+        // 스킬 코인 게이지바
+        this.add.rectangle(140, 65, 204, 18, 0x000000, 0.5);
+        this.skillBar = this.add.rectangle(40, 65, 0, 14, 0xeab308).setOrigin(0, 0.5);
+        this.coinText = this.add.text(140, 65, 'COIN: 0/100', { fontSize: '12px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
 
-        // 텍스트 UI
+        // 점수 및 Phase UI
         this.scoreText = this.add.text(width - 40, 35, 'SCORE: 0', { fontSize: '22px', color: '#fff', fontStyle: 'bold' }).setOrigin(1, 0.5);
-        this.phaseText = this.add.text(width / 2, 35, 'PHASE 1', { fontSize: '24px', color: '#eab308', fontStyle: 'bold' }).setOrigin(0.5);
+        this.phaseText = this.add.text(width / 2, 35, 'PHASE 1', { fontSize: '24px', color: '#facc15', fontStyle: 'bold' }).setOrigin(0.5);
 
-        // Phase Up 알림 텍스트
         this.phaseUpText = this.add.text(width / 2, 180, 'PHASE UP!', { fontSize: '48px', color: '#facc15', fontStyle: 'bold' })
             .setOrigin(0.5).setAlpha(0);
     }
@@ -345,9 +448,8 @@ class MainGameScene extends Phaser.Scene {
     createControls() {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
-        const btnY = height - 60; // 터치 피로도를 고려한 하단 배치
+        const btnY = height - 60;
 
-        // 점프 버튼 (좌측)
         const jumpBtn = this.add.circle(100, btnY, 48, 0x3b82f6, 0.6).setInteractive();
         this.add.text(100, btnY, 'JUMP', { fontSize: '18px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
 
@@ -355,11 +457,9 @@ class MainGameScene extends Phaser.Scene {
             this.handleJump();
         });
 
-        // 숙이기(Slide) 버튼 (중앙 우측)
         const slideBtn = this.add.circle(width - 220, btnY, 48, 0x8b5cf6, 0.6).setInteractive();
         this.add.text(width - 220, btnY, 'SLIDE', { fontSize: '18px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
 
-        // 터치 완벽 대응: pointerdown, pointerup, pointerout, pointercancel 모두 등록
         const startSlide = () => { this.setSliding(true); };
         const stopSlide = () => { this.setSliding(false); };
 
@@ -368,7 +468,6 @@ class MainGameScene extends Phaser.Scene {
         slideBtn.on('pointerout', stopSlide);
         slideBtn.on('pointercancel', stopSlide);
 
-        // 스킬 버튼 (우측)
         this.skillBtn = this.add.circle(width - 90, btnY, 48, 0x64748b, 0.6).setInteractive();
         this.skillBtnText = this.add.text(width - 90, btnY, 'SKILL', { fontSize: '18px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
 
@@ -389,23 +488,24 @@ class MainGameScene extends Phaser.Scene {
         this.isSliding = sliding;
 
         if (sliding) {
-            this.player.setScale(1, 0.5);
-            if (this.player.body.touching.down) {
-                this.player.y += 15;
-            }
+            const newHeight = this.originalHeight * 0.45;
+            this.player.body.setSize(this.originalWidth, newHeight);
+            this.player.body.setOffset(0, this.originalHeight - newHeight);
+            this.player.setScale(1.2, 0.45); // 납작하게 웅크리며 앞으로 길어짐
         } else {
+            this.player.body.setSize(this.originalWidth, this.originalHeight);
+            this.player.body.setOffset(0, 0);
             this.player.setScale(1, 1);
         }
     }
 
     activateSkill() {
-        if (this.skillGauge >= 100 && !this.isSkillActive) {
+        if (this.coinCount >= 100 && !this.isSkillActive) {
             this.isSkillActive = true;
-            this.skillGauge = 0;
-            this.skillTimer = 6.0; // 6초간 유지
+            this.coinCount = 0;
+            this.skillTimer = 6.0;
             soundFx.playSkill();
 
-            // 건우 스킬: 화면 내 모든 장애물 즉시 파괴
             if (this.skillType === 'DESTROY_RUSH') {
                 this.obstacles.getChildren().forEach(obs => {
                     this.createExplosion(obs.x, obs.y);
@@ -417,19 +517,16 @@ class MainGameScene extends Phaser.Scene {
     }
 
     update(time, delta) {
-        // Delta 시간(초) 계산: 120Hz/60Hz 가변 주사율 보정
         const dt = delta / 1000;
 
-        // Phase 난이도 상승 (30초마다)
         this.phaseTime += dt;
         if (this.phaseTime >= 30) {
             this.phaseTime = 0;
             this.phase++;
-            this.currentSpeed += 60; // 속도 증가
-            this.spawnInterval = Math.max(0.8, this.spawnInterval - 0.25); // 스폰 간격 단축
+            this.currentSpeed += 60;
+            this.spawnInterval = Math.max(0.8, this.spawnInterval - 0.25);
             this.phaseText.setText(`PHASE ${this.phase}`);
 
-            // Phase Up 연출 (플래시, 진동, 텍스트)
             this.cameras.main.flash(300, 255, 255, 255);
             if (navigator.vibrate) navigator.vibrate(200);
 
@@ -444,7 +541,6 @@ class MainGameScene extends Phaser.Scene {
             });
         }
 
-        // 스킬 타이머 처리
         if (this.isSkillActive) {
             this.skillTimer -= dt;
             if (this.skillTimer <= 0) {
@@ -455,24 +551,21 @@ class MainGameScene extends Phaser.Scene {
             }
         }
 
-        // 건영 스킬: 코인 자석 연출
         if (this.isSkillActive && this.skillType === 'MAGNET_SHIELD') {
             this.coins.getChildren().forEach(coin => {
-                const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, coin.x, coin.y);
-                if (dist < 350) {
-                    this.physics.moveToObject(coin, this.player, 700);
+                const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y - 35, coin.x, coin.y);
+                if (dist < 380) {
+                    this.physics.moveTo(coin, this.player.x, this.player.y - 35, 750);
                 }
             });
         }
 
-        // 장애물/아이템 스폰 관리
         this.spawnTimer += dt;
         if (this.spawnTimer >= this.spawnInterval) {
             this.spawnTimer = 0;
             this.spawnPattern();
         }
 
-        // 객체 이동 (Frame Independent: dt 곱연산 적용)
         const moveDistance = this.currentSpeed * dt;
 
         this.obstacles.getChildren().forEach(obs => {
@@ -492,16 +585,15 @@ class MainGameScene extends Phaser.Scene {
             if (heart.x < -50) heart.destroy();
         });
 
-        // UI 점수 업데이트
         this.score += Math.floor(dt * 100);
         this.scoreText.setText(`SCORE: ${this.score}`);
 
-        // UI 게이지 업데이트
         this.hpBar.width = Phaser.Math.Clamp((this.hp / this.maxHp) * 200, 0, 200);
-        this.skillBar.width = Phaser.Math.Clamp((this.skillGauge / 100) * 200, 0, 200);
+        this.skillBar.width = Phaser.Math.Clamp((this.coinCount / 100) * 200, 0, 200);
+        this.coinText.setText(`COIN: ${Math.floor(this.coinCount)}/100`);
 
-        if (this.skillGauge >= 100 && !this.isSkillActive) {
-            this.skillBtn.setFillStyle(0x3b82f6, 1.0);
+        if (this.coinCount >= 100 && !this.isSkillActive) {
+            this.skillBtn.setFillStyle(0xeab308, 1.0);
         } else {
             this.skillBtn.setFillStyle(0x64748b, 0.6);
         }
@@ -511,20 +603,19 @@ class MainGameScene extends Phaser.Scene {
         this.shieldGfx.clear();
         this.shieldGfx.setVisible(true);
 
-        // 스킬 종료 1.5초 전 점박/경고 연출
         if (this.skillTimer <= 1.5 && Math.floor(this.time.now / 100) % 2 === 0) {
             return;
         }
 
-        const color = (this.skillType === 'MAGNET_SHIELD') ? 0xa855f7 : 0x22c55e;
+        const color = (this.skillType === 'MAGNET_SHIELD') ? 0xc084fc : 0x4ade80;
         this.shieldGfx.lineStyle(4, color, 0.8);
-        this.shieldGfx.strokeCircle(this.player.x, this.player.y, 45);
+        const centerY = this.player.y - (this.isSliding ? 20 : 45);
+        this.shieldGfx.strokeCircle(this.player.x, centerY, 55);
 
-        // 회전하는 이펙트 알갱이
-        const angle = (this.time.now / 4) % 360;
+        const angle = (this.time.now / 3) % 360;
         const rad = Phaser.Math.DegToRad(angle);
-        const px = this.player.x + Math.cos(rad) * 45;
-        const py = this.player.y + Math.sin(rad) * 45;
+        const px = this.player.x + Math.cos(rad) * 55;
+        const py = centerY + Math.sin(rad) * 55;
 
         this.shieldGfx.fillStyle(0xffffff, 1);
         this.shieldGfx.fillCircle(px, py, 6);
@@ -535,19 +626,16 @@ class MainGameScene extends Phaser.Scene {
         const rand = Phaser.Math.Between(1, 3);
 
         if (rand === 1) {
-            // 패턴 1: 점프형 높은 장애물
             const obs = this.obstacles.create(width + 50, this.groundY - 32, 'obs_high');
             obs.body.allowGravity = false;
             obs.setImmovable(true);
 
-            // 상단 코인 배치
             for(let i=0; i<3; i++) {
                 const coin = this.coins.create(width + 50 + (i * 35), this.groundY - 120, 'item_coin');
                 coin.body.allowGravity = false;
             }
         } else if (rand === 2) {
-            // 패턴 2: 숙이기용 공중 장애물 + 아래 코인
-            const obs = this.obstacles.create(width + 50, this.groundY - 85, 'obs_air');
+            const obs = this.obstacles.create(width + 50, this.groundY - 80, 'obs_air');
             obs.body.allowGravity = false;
             obs.setImmovable(true);
 
@@ -556,7 +644,6 @@ class MainGameScene extends Phaser.Scene {
                 coin.body.allowGravity = false;
             }
         } else {
-            // 패턴 3: 연속 코인 + 확률적 하트
             for(let i=0; i<4; i++) {
                 const coin = this.coins.create(width + 50 + (i * 40), this.groundY - 30, 'item_coin');
                 coin.body.allowGravity = false;
@@ -569,7 +656,6 @@ class MainGameScene extends Phaser.Scene {
     }
 
     handleObstacleCollision(player, obstacle) {
-        // 무적 돌진 스킬 상태일 때 장애물 파괴
         if (this.isSkillActive && this.skillType === 'DESTROY_RUSH') {
             this.createExplosion(obstacle.x, obstacle.y);
             obstacle.destroy();
@@ -577,14 +663,12 @@ class MainGameScene extends Phaser.Scene {
             return;
         }
 
-        // 회피 보호막 스킬 상태일 때 데미지 무시 및 방어 이펙트
         if (this.isSkillActive && this.skillType === 'MAGNET_SHIELD') {
             obstacle.destroy();
             soundFx.playHit();
             return;
         }
 
-        // 일반 상태 피격
         obstacle.destroy();
         soundFx.playHit();
         this.hp -= 25;
@@ -603,7 +687,7 @@ class MainGameScene extends Phaser.Scene {
         this.score += 50;
 
         if (!this.isSkillActive) {
-            this.skillGauge = Math.min(100, this.skillGauge + (8 * this.gaugeMultiplier));
+            this.coinCount = Math.min(100, this.coinCount + (1 * this.gaugeMultiplier));
         }
     }
 
@@ -643,20 +727,20 @@ class CharSelectScene extends Phaser.Scene {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
 
-        this.add.text(width / 2, 80, '건스패밀리', { fontSize: '40px', color: '#facc15', fontStyle: 'bold' }).setOrigin(0.5);
-        this.add.text(width / 2, 130, '캐릭터를 선택하세요', { fontSize: '20px', color: '#fff' }).setOrigin(0.5);
+        this.add.text(width / 2, 50, '건스패밀리', { fontSize: '42px', color: '#facc15', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(width / 2, 95, '히어로를 선택하세요', { fontSize: '18px', color: '#94a3b8' }).setOrigin(0.5);
 
         // 건영 카드
-        const card1 = this.add.rectangle(width / 2 - 140, height / 2, 220, 280, 0x1e1e2e).setStrokeStyle(3, 0xa855f7).setInteractive();
-        this.add.rectangle(width / 2 - 140, height / 2 - 50, 50, 70, 0x111118).setStrokeStyle(2, 0xa855f7);
-        this.add.text(width / 2 - 140, height / 2 + 20, '건영 (블랙팬서)', { fontSize: '20px', color: '#a855f7', fontStyle: 'bold' }).setOrigin(0.5);
-        this.add.text(width / 2 - 140, height / 2 + 70, 'HP: 100\n게이지 충전 1.5배\n스킬: 자석+보호막', { fontSize: '14px', color: '#ccc', align: 'center' }).setOrigin(0.5);
+        const card1 = this.add.rectangle(width / 2 - 140, height / 2 + 20, 230, 310, 0x1e293b).setStrokeStyle(3, 0xc084fc).setInteractive();
+        this.add.image(width / 2 - 140, height / 2 - 40, 'char_gunyoung');
+        this.add.text(width / 2 - 140, height / 2 + 35, '건영 (블랙팬서)', { fontSize: '20px', color: '#c084fc', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(width / 2 - 140, height / 2 + 90, 'HP: 100\n코인 ~67개면 스킬 가능!\n(게이지 1.5배 효율)', { fontSize: '14px', color: '#cbd5e1', align: 'center', lineHeight: 1.4 }).setOrigin(0.5);
 
         // 건우 카드
-        const card2 = this.add.rectangle(width / 2 + 140, height / 2, 220, 280, 0x1e1e2e).setStrokeStyle(3, 0x22c55e).setInteractive();
-        this.add.rectangle(width / 2 + 140, height / 2 - 50, 60, 80, 0x15803d).setStrokeStyle(2, 0x4ade80);
-        this.add.text(width / 2 + 140, height / 2 + 20, '건우 (헐크)', { fontSize: '20px', color: '#22c55e', fontStyle: 'bold' }).setOrigin(0.5);
-        this.add.text(width / 2 + 140, height / 2 + 70, 'HP: 150\n높은 생존력\n스킬: 전멸+무적돌진', { fontSize: '14px', color: '#ccc', align: 'center' }).setOrigin(0.5);
+        const card2 = this.add.rectangle(width / 2 + 140, height / 2 + 20, 230, 310, 0x1e293b).setStrokeStyle(3, 0x4ade80).setInteractive();
+        this.add.image(width / 2 + 140, height / 2 - 40, 'char_gunwoo');
+        this.add.text(width / 2 + 140, height / 2 + 35, '건우 (헐크)', { fontSize: '20px', color: '#4ade80', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(width / 2 + 140, height / 2 + 90, 'HP: 150\n코인 100개 필요\n(장애물 전멸+무적 돌진)', { fontSize: '14px', color: '#cbd5e1', align: 'center', lineHeight: 1.4 }).setOrigin(0.5);
 
         card1.on('pointerdown', () => {
             soundFx.init();
@@ -698,7 +782,6 @@ class GameOverScene extends Phaser.Scene {
     }
 }
 
-// Phaser Game Configuration
 const config = {
     type: Phaser.AUTO,
     parent: 'game-container',
